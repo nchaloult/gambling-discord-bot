@@ -74,6 +74,8 @@ dcClient.on('message', msg => {
           msg.channel.send(`You have an account now :thumbsup: Type \`${prefix}bank\` to see your balance.`);
         }
       });
+    } else {
+      msg.channel.send(`Unrecognized command: ${msgContent}`);
     }
   }
 });
