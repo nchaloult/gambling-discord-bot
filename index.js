@@ -39,7 +39,9 @@ dcClient.on('message', msg => {
         res.rows.map(row => {
           output += JSON.stringify(row);
         });
-        msg.channel.send(output);
+        if (output.length > 0) {
+          msg.channel.send(output);
+        }
       });
     } else if (msgContent === 'bank') {
       console.log(`[INFO] Bot invoked with "bank" message by ${msg.author.username}.`);
@@ -52,7 +54,7 @@ dcClient.on('message', msg => {
         if (res.rowCount == 0) {
           console.log(`[INFO] Creating an account for ${msg.author.username}...`);
           msg.channel.send('Making an account for you...');
-          client.query('insert into currency (id) values ($1);', [msg.author.id], (err, res) => {
+          client.query('insert into currency (id, username) values ($1, $2);', [msg.author.id, msg.author.username], (err, res) => {
             if (err) {
               console.log('[ERROR]', err);
               msg.channel.send('Something went wrong while trying to make your account. Check the console.');
