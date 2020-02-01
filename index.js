@@ -19,10 +19,13 @@ dcClient.on('ready', () => {
 const prefix = '$';
 
 dcClient.on('message', msg => {
+  // If the message's first character is the bot's prefix...
   if (msg.content.substring(0, prefix.length) === prefix) {
+    // Remove prefix and sanitize input
     const msgContent = msg.content.substring(prefix.length).trim().toLowerCase();
 
     if (msgContent === 'all') {
+      // Fetch everyone's balances
       console.log(new Date().toISOString() + ' -- [INFO] Bot invoked with "all" message. Reading everyone\'s balance....');
       client.query('select currency, username from currency;', (err, res) => {
         if (err) {
@@ -30,6 +33,7 @@ dcClient.on('message', msg => {
           msg.channel.send('Something went wrong. Check the console.');
           return;
         }
+        // Display each person's balance next to their username
         let output = "balances:\n\n";
         res.rows.map(row => {
           output += row.username + ': $' + row.currency + '\n';
@@ -37,6 +41,7 @@ dcClient.on('message', msg => {
         msg.channel.send(output);
       });
     } else if (msgContent === 'bank') {
+      // See if a balance exists for the current user
       console.log(new Date().toISOString() + ` -- [INFO] Bot invoked with "bank" message by ${msg.author.username}.`);
       client.query('select currency from currency where id=$1;', [msg.author.id], (err, res) => {
         if (err) {
@@ -44,9 +49,11 @@ dcClient.on('message', msg => {
           msg.channel.send('Something went wrong. Check the console.');
           return;
         }
+        // If the current user has a bank account...
         if (res.rowCount > 0) {
           msg.reply(`your balance is: \$${res.rows[0].currency}`);
         } else {
+          // Make a new bank account for the current user
           console.log(new Date().toISOString() + ` -- [INFO] Creating an account for ${msg.author.username}...`);
           msg.channel.send('Making an account for you...');
           client.query('insert into currency (id, username) values ($1, $2);', [msg.author.id, msg.author.username], (err, res) => {
@@ -61,6 +68,8 @@ dcClient.on('message', msg => {
         }
       });
     } else {
+      // Someone's message began with the bot's prefix, but we don't have
+      // instructions for handling what was written after that
       msg.channel.send(`Unrecognized command: ${msgContent}`);
     }
   }
