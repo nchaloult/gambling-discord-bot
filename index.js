@@ -27,23 +27,19 @@ dcClient.on('message', msg => {
     if (msgContent === 'hello') {
       console.log('[INFO] Bot invoked with "hello" message. Responding with "world!"....');
       msg.reply('world!');
-    } else if (msgContent === 'read') {
-      console.log('[INFO] Bot invoked with "read" message. Responding with all rows in the currency table....');
-      client.query('select * from currency;', (err, res) => {
+    } else if (msgContent === 'all') {
+      console.log('[INFO] Bot invoked with "all" message. Reading everyone\'s balance....');
+      client.query('select currency, username from currency;', (err, res) => {
         if (err) {
           console.log('[ERROR]', err);
           msg.channel.send('Something went wrong. Check the console.');
           return;
         }
-        let output = "";
+        let output = "balances:\n\n";
         res.rows.map(row => {
-          output += JSON.stringify(row);
+          output += row.username + ': $' + row.currency + '\n';
         });
-        if (output.length > 0) {
-          msg.channel.send(output);
-        } else {
-          msg.channel.send('No one has an account. Make one by typing: `$bank`');
-        }
+        msg.channel.send(output);
       });
     } else if (msgContent === 'bank') {
       console.log(`[INFO] Bot invoked with "bank" message by ${msg.author.username}.`);
