@@ -41,6 +41,8 @@ dcClient.on('message', msg => {
         });
         if (output.length > 0) {
           msg.channel.send(output);
+        } else {
+          msg.channel.send('No one has an account. Make one by typing: `$bank`');
         }
       });
     } else if (msgContent === 'bank') {
@@ -51,7 +53,18 @@ dcClient.on('message', msg => {
           msg.channel.send('Something went wrong. Check the console.');
           return;
         }
-        if (res.rowCount == 0) {
+        if (res.rowCount > 0) {
+          console.log(`[INFO] Fetching ${msg.author.username}'s balance....`);
+          client.query('select currency from currency where id=$1;', [msg.author.id], (err, res) => {
+            if (err) {
+              console.log('[ERROR]', err);
+              msg.channel.send('Something went wrong. Check the console.');
+              return;
+            }
+            // At this point, the query should have only returned one row.
+            msg.reply(`your balance is: \$${res.rows[0].currency}`);
+          });
+        } else {
           console.log(`[INFO] Creating an account for ${msg.author.username}...`);
           msg.channel.send('Making an account for you...');
           client.query('insert into currency (id, username) values ($1, $2);', [msg.author.id, msg.author.username], (err, res) => {
@@ -63,8 +76,6 @@ dcClient.on('message', msg => {
           });
           console.log(`[INFO] Account created for ${msg.author.username}.`);
           msg.channel.send(`You have an account now :thumbsup: Type \`${prefix}bank\` to see your balance.`);
-        } else {
-          msg.channel.send('You have some money');
         }
       });
     }
