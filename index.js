@@ -47,16 +47,7 @@ dcClient.on('message', msg => {
           return;
         }
         if (res.rowCount > 0) {
-          console.log(new Date().toISOString() + ` -- [INFO] Fetching ${msg.author.username}'s balance....`);
-          client.query('select currency from currency where id=$1;', [msg.author.id], (err, res) => {
-            if (err) {
-              console.log(new Date().toISOString() + ' -- [ERROR]', err);
-              msg.channel.send('Something went wrong. Check the console.');
-              return;
-            }
-            // At this point, the query should have only returned one row.
-            msg.reply(`your balance is: \$${res.rows[0].currency}`);
-          });
+          msg.reply(`your balance is: \$${res.rows[0].currency}`);
         } else {
           console.log(new Date().toISOString() + ` -- [INFO] Creating an account for ${msg.author.username}...`);
           msg.channel.send('Making an account for you...');
