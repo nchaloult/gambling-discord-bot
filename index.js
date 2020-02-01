@@ -24,10 +24,7 @@ dcClient.on('message', msg => {
   if (msgContent.substring(0, prefix.length) === prefix) {
     msgContent = msgContent.substring(prefix.length);
 
-    if (msgContent === 'hello') {
-      console.log('[INFO] Bot invoked with "hello" message. Responding with "world!"....');
-      msg.reply('world!');
-    } else if (msgContent === 'all') {
+    if (msgContent === 'all') {
       console.log('[INFO] Bot invoked with "all" message. Reading everyone\'s balance....');
       client.query('select currency, username from currency;', (err, res) => {
         if (err) {
