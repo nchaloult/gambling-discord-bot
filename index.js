@@ -85,6 +85,10 @@ dcClient.on('message', msg => {
                 msg.channel.send('Something went wrong. Check the console.');
                 return;
               }
+              if (res === null) {
+                msg.channel.send('You need to make an account first. Type `$bank`');
+                return;
+              }
               const curBalance = parseInt(res.rows[0].currency);
               if (curBalance >= gambleAmount) {
                 // The current user has enough money to gamble what they've asked to gamble. Flip a coin and process that gamble
