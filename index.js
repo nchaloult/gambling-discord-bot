@@ -19,10 +19,8 @@ dcClient.on('ready', () => {
 const prefix = '$';
 
 dcClient.on('message', msg => {
-  let msgContent = msg.content.trim().toLowerCase();
-
-  if (msgContent.substring(0, prefix.length) === prefix) {
-    msgContent = msgContent.substring(prefix.length);
+  if (msg.content.substring(0, prefix.length) === prefix) {
+    const msgContent = msg.content.substring(prefix.length).trim().toLowerCase();
 
     if (msgContent === 'all') {
       console.log(new Date().toISOString() + ' -- [INFO] Bot invoked with "all" message. Reading everyone\'s balance....');
