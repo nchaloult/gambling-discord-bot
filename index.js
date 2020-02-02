@@ -160,6 +160,10 @@ dcClient.on('message', msg => {
         msg.channel.send('Provide a dollar amount to give. Example usage: "$give @someone 100"');
         return;
       }
+      if (giveAmount <= 0) {
+        msg.channel.send('You have to give a positive number.');
+        return;
+      }
 
       // Check that someone was @'d
       const recipients = msg.mentions.users;
