@@ -1,3 +1,5 @@
+const { botPrefix, balanceFloor } = require('./constants');
+
 const dotenv = require('dotenv');
 dotenv.config();
 
@@ -15,15 +17,11 @@ dcClient.on('ready', () => {
   console.log(`Logged in as ${dcClient.user.tag}`);
 });
 
-// App constants
-const prefix = '$';
-const balanceFloor = 10;
-
 dcClient.on('message', msg => {
   // If the message's first character is the bot's prefix...
-  if (msg.content.substring(0, prefix.length) === prefix) {
+  if (msg.content.substring(0, botPrefix.length) === botPrefix) {
     // Remove prefix and sanitize input
-    const msgContent = msg.content.substring(prefix.length).trim().toLowerCase();
+    const msgContent = msg.content.substring(botPrefix.length).trim().toLowerCase();
 
     if (msgContent === 'all') {
       // Fetch everyone's balances
@@ -65,7 +63,7 @@ dcClient.on('message', msg => {
             }
           });
           console.log(new Date().toISOString() + ` -- [INFO] Account created for ${msg.author.username}.`);
-          msg.channel.send(`You have an account now :thumbsup: Type \`${prefix}bank\` to see your balance.`);
+          msg.channel.send(`You have an account now :thumbsup: Type \`${botPrefix}bank\` to see your balance.`);
         }
       });
     } else if (msgContent.includes('gamble')) {
