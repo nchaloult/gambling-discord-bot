@@ -1,8 +1,8 @@
 const { botPrefix, balanceFloor } = require('./constants');
 
 // Fetch everyone's balances in descending order.
-exports.allCmd = (dbClient, msg) => {
-  dbClient.query('select currency, username from currency order by currency desc;', (err, res) => {
+exports.allCmd = (db, msg) => {
+  db.query('select currency, username from currency order by currency desc;', (err, res) => {
     if (err) {
       notifyOfErr(err, msg);
     }
@@ -17,8 +17,8 @@ exports.allCmd = (dbClient, msg) => {
 };
 
 // Fetch everyone's all-time-high balances.
-exports.alltimeCmd = (dbClient, msg) => {
-  dbClient.query('select alltime_balance, username from currency order by alltime_balance desc;', (err, res) => {
+exports.alltimeCmd = (db, msg) => {
+  db.query('select alltime_balance, username from currency order by alltime_balance desc;', (err, res) => {
     if (err) {
       notifyOfErr(err, msg);
     }
@@ -34,8 +34,8 @@ exports.alltimeCmd = (dbClient, msg) => {
 
 // Print the current user's balance. If they don't have a balance, make them
 // an account.
-exports.bankCmd = (dbClient, msg) => {
-  dbClient.query('select currency from currency where id=$1;', [msg.author.id], (err, res) => {
+exports.bankCmd = (db, msg) => {
+  db.query('select currency from currency where id=$1;', [msg.author.id], (err, res) => {
     if (err) {
       notifyOfErr(err, msg);
     }
@@ -46,7 +46,7 @@ exports.bankCmd = (dbClient, msg) => {
     } else {
       // Make a new bank account for the current user
       msg.channel.send('Making an account for you...');
-      dbClient.query('insert into currency (id, username) values ($1, $2);', [msg.author.id, msg.author.username], (err, res) => {
+      db.query('insert into currency (id, username) values ($1, $2);', [msg.author.id, msg.author.username], (err, res) => {
         if (err) {
           notifyOfErr(err, msg);
         }
@@ -57,7 +57,7 @@ exports.bankCmd = (dbClient, msg) => {
 };
 
 // Gamble a specified amount. Chances of winning are 50%.
-exports.gambleCmd = (dbClient, msg, msgContent) => {
+exports.gambleCmd = (db, msg, msgContent) => {
   // Split up message into expected args
   const msgArgs = msgContent.split(' ');
   if (msgArgs.length === 2) {
@@ -72,7 +72,7 @@ exports.gambleCmd = (dbClient, msg, msgContent) => {
     }
 
     // Fetch current user's balance
-    dbClient.query('select currency, alltime_balance from currency where id=$1', [msg.author.id], (err, res) => {
+    db.query('select currency, alltime_balance from currency where id=$1', [msg.author.id], (err, res) => {
       if (err) {
         notifyOfErr(err, msg);
       }
@@ -99,7 +99,7 @@ exports.gambleCmd = (dbClient, msg, msgContent) => {
         // Check if the current user's new balance is greater than their all-time high
         const alltimeBalance = parseInt(res.rows[0].alltime_balance);
         if (gamblerNewBalance > alltimeBalance) {
-          dbClient.query('update currency set alltime_balance=$1 where id=$2;', [gamblerNewBalance, msg.author.id], (err, res) => {
+          db.query('update currency set alltime_balance=$1 where id=$2;', [gamblerNewBalance, msg.author.id], (err, res) => {
             if (err) {
               notifyOfErr(err, msg);
             }
@@ -121,7 +121,7 @@ exports.gambleCmd = (dbClient, msg, msgContent) => {
       }
 
       // Update current user's balance based on the outcome of their gamble
-      dbClient.query('update currency set currency=$1 where id=$2', [gamblerNewBalance, msg.author.id], (err, res) => {
+      db.query('update currency set currency=$1 where id=$2', [gamblerNewBalance, msg.author.id], (err, res) => {
         if (err) {
           notifyOfErr(err, msg);
         }
@@ -132,7 +132,7 @@ exports.gambleCmd = (dbClient, msg, msgContent) => {
   }
 };
 
-exports.giveCmd = (dbClient, msg, msgContent) => {
+exports.giveCmd = (db, msg, msgContent) => {
   // Split up message into expected args
   const msgArgs = msgContent.split(' ');
   if (msgArgs.length !== 3) {
@@ -163,7 +163,7 @@ exports.giveCmd = (dbClient, msg, msgContent) => {
     return;
   }
 
-  dbClient.query('select currency from currency where id=$1', [recipient.id], (err, res) => {
+  db.query('select currency from currency where id=$1', [recipient.id], (err, res) => {
     if (err) {
       notifyOfErr(err, msg);
     }
@@ -176,7 +176,7 @@ exports.giveCmd = (dbClient, msg, msgContent) => {
 
     const recipientOldBalance = parseInt(res.rows[0].currency);
 
-    dbClient.query('select currency from currency where id=$1', [msg.author.id], (err, res) => {
+    db.query('select currency from currency where id=$1', [msg.author.id], (err, res) => {
       if (err) {
         notifyOfErr(err, msg);
       }
@@ -198,12 +198,12 @@ exports.giveCmd = (dbClient, msg, msgContent) => {
       // Process the transaction
       const recipientNewBalance = recipientOldBalance + giveAmount;
       const giverNewBalance = giverOldBalance - giveAmount;
-      dbClient.query('update currency set currency=$1 where id=$2;', [recipientNewBalance, recipient.id], (err, res) => {
+      db.query('update currency set currency=$1 where id=$2;', [recipientNewBalance, recipient.id], (err, res) => {
         if (err) {
           notifyOfErr(err, msg);
         }
       });
-      dbClient.query('update currency set currency=$1 where id=$2;', [giverNewBalance, msg.author.id], (err, res) => {
+      db.query('update currency set currency=$1 where id=$2;', [giverNewBalance, msg.author.id], (err, res) => {
         if (err) {
           notifyOfErr(err, msg);
         }

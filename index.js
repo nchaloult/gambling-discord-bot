@@ -5,13 +5,14 @@ const { allCmd, alltimeCmd, bankCmd, gambleCmd, giveCmd } = require('./commands'
 const dotenv = require('dotenv');
 dotenv.config();
 
-// Establish connection from Postgres
-const { Client } = require('pg');
-const dbClient = new Client({
+// Establish pool of Postgres clients. The default max number of clients is 10.
+const { Pool } = require('pg');
+const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: true
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
-dbClient.connect();
 
 // Init discord client
 const discord = require('discord.js');
@@ -28,15 +29,15 @@ dcClient.on('message', msg => {
     const msgContent = msg.content.substring(botPrefix.length).trim().toLowerCase();
 
     if (msgContent === 'all') {
-      allCmd(dbClient, msg);
+      allCmd(pool, msg);
     } else if (msgContent === 'alltime') {
-      alltimeCmd(dbClient, msg);
+      alltimeCmd(pool, msg);
     } else if (msgContent === 'bank') {
-      bankCmd(dbClient, msg);
+      bankCmd(pool, msg);
     } else if (msgContent.includes('gamble')) {
-      gambleCmd(dbClient, msg, msgContent);
+      gambleCmd(pool, msg, msgContent);
     } else if (msgContent.includes('give')) {
-      giveCmd(dbClient, msg, msgContent);
+      giveCmd(pool, msg, msgContent);
     } else {
       // Someone's message began with the bot's prefix, but we don't have
       // instructions for handling what was written after that
