@@ -1,5 +1,5 @@
 const { botPrefix, balanceFloor } = require('./constants');
-const { allCmd, bankCmd, gambleCmd, giveCmd } = require('./commands');
+const { allCmd, alltimeCmd, bankCmd, gambleCmd, giveCmd } = require('./commands');
 
 // Load in secrets from env vars
 const dotenv = require('dotenv');
@@ -29,6 +29,8 @@ dcClient.on('message', msg => {
 
     if (msgContent === 'all') {
       allCmd(dbClient, msg);
+    } else if (msgContent === 'alltime') {
+      alltimeCmd(dbClient, msg);
     } else if (msgContent === 'bank') {
       bankCmd(dbClient, msg);
     } else if (msgContent.includes('gamble')) {

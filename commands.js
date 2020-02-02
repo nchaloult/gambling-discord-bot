@@ -16,6 +16,22 @@ exports.allCmd = (dbClient, msg) => {
   });
 };
 
+// Fetch everyone's all-time-high balances.
+exports.alltimeCmd = (dbClient, msg) => {
+  dbClient.query('select alltime_balance, username from currency order by alltime_balance desc;', (err, res) => {
+    if (err) {
+      notifyOfErr(err, msg);
+    }
+
+    // Display each person's all-time balance next to their username
+    let output = "all-time balances:\n\n";
+    res.rows.map(row => {
+      output += row.username + ': ' + botPrefix + row.alltime_balance + '\n';
+    });
+    msg.channel.send(output);
+  });
+};
+
 // Print the current user's balance. If they don't have a balance, make them
 // an account.
 exports.bankCmd = (dbClient, msg) => {
@@ -56,7 +72,7 @@ exports.gambleCmd = (dbClient, msg, msgContent) => {
     }
 
     // Fetch current user's balance
-    dbClient.query('select currency from currency where id=$1', [msg.author.id], (err, res) => {
+    dbClient.query('select currency, alltime_balance from currency where id=$1', [msg.author.id], (err, res) => {
       if (err) {
         notifyOfErr(err, msg);
       }
@@ -79,6 +95,17 @@ exports.gambleCmd = (dbClient, msg, msgContent) => {
       if (coinFlip === 1) {
         // Current user won the gamble
         gamblerNewBalance = gamblerOldBalance + gambleAmount;
+
+        // Check if the current user's new balance is greater than their all-time high
+        const alltimeBalance = parseInt(res.rows[0].alltime_balance);
+        if (gamblerNewBalance > alltimeBalance) {
+          dbClient.query('update currency set alltime_balance=$1 where id=$2;', [gamblerNewBalance, msg.author.id], (err, res) => {
+            if (err) {
+              notifyOfErr(err, msg);
+            }
+          });
+        }
+
         msg.reply(`you gambled \$${gambleAmount} and won! Your new balance is \$${gamblerNewBalance}`);
       } else {
         // Current user lost the gamble
