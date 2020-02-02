@@ -1,17 +1,20 @@
 const { botPrefix, balanceFloor } = require('./constants');
 
+// Load in secrets from env vars
 const dotenv = require('dotenv');
 dotenv.config();
 
-const dc = require('discord.js');
-const dcClient = new dc.Client();
-
+// Establish connection from Postgres
 const { Client } = require('pg');
-const client = new Client({
+const dbClient = new Client({
   connectionString: process.env.DATABASE_URL,
   ssl: true
 });
-client.connect();
+dbClient.connect();
+
+// Init discord client
+const discord = require('discord.js');
+const dcClient = new discord.Client();
 
 dcClient.on('ready', () => {
   console.log(`Logged in as ${dcClient.user.tag}`);
@@ -26,7 +29,7 @@ dcClient.on('message', msg => {
     if (msgContent === 'all') {
       // Fetch everyone's balances
       console.log(new Date().toISOString() + ' -- [INFO] Bot invoked with "all" message. Reading everyone\'s balance....');
-      client.query('select currency, username from currency order by currency desc;', (err, res) => {
+      dbClient.query('select currency, username from currency order by currency desc;', (err, res) => {
         if (err) {
           console.log(new Date().toISOString() + ' -- [ERROR]', err);
           msg.channel.send('Something went wrong. Check the console.');
@@ -42,7 +45,7 @@ dcClient.on('message', msg => {
     } else if (msgContent === 'bank') {
       // See if a balance exists for the current user
       console.log(new Date().toISOString() + ` -- [INFO] Bot invoked with "bank" message by ${msg.author.username}.`);
-      client.query('select currency from currency where id=$1;', [msg.author.id], (err, res) => {
+      dbClient.query('select currency from currency where id=$1;', [msg.author.id], (err, res) => {
         if (err) {
           console.log(new Date().toISOString() + ' -- [ERROR]', err);
           msg.channel.send('Something went wrong. Check the console.');
@@ -55,7 +58,7 @@ dcClient.on('message', msg => {
           // Make a new bank account for the current user
           console.log(new Date().toISOString() + ` -- [INFO] Creating an account for ${msg.author.username}...`);
           msg.channel.send('Making an account for you...');
-          client.query('insert into currency (id, username) values ($1, $2);', [msg.author.id, msg.author.username], (err, res) => {
+          dbClient.query('insert into currency (id, username) values ($1, $2);', [msg.author.id, msg.author.username], (err, res) => {
             if (err) {
               console.log(new Date().toISOString() + ' -- [ERROR]', err);
               msg.channel.send('Something went wrong while trying to make your account. Check the console.');
@@ -83,7 +86,7 @@ dcClient.on('message', msg => {
 
           // Query to see if the current user has a larger balance than what they've gambled
           console.log(new Date().toISOString() + ` -- [INFO] ${msg.author.username} has attempted to gamble \$${gambleAmount}. Checking if they have that much money...`);
-          client.query('select currency from currency where id=$1', [msg.author.id], (err, res) => {
+          dbClient.query('select currency from currency where id=$1', [msg.author.id], (err, res) => {
             if (err) {
               console.log(new Date().toISOString() + ' -- [ERROR]', err);
               msg.channel.send('Something went wrong. Check the console.');
@@ -127,7 +130,7 @@ dcClient.on('message', msg => {
             }
 
             // Update current user's balance based on the outcome of their gamble
-            client.query('update currency set currency=$1 where id=$2;', [newBalance, msg.author.id], (err, res) => {
+            dbClient.query('update currency set currency=$1 where id=$2;', [newBalance, msg.author.id], (err, res) => {
               if (err) {
                 console.log(new Date().toISOString() + ' -- [ERROR]', err);
                 msg.channel.send('Something went wrong. Check the console.');
@@ -178,7 +181,7 @@ dcClient.on('message', msg => {
       }
 
       // Check to see if the recipient has an account
-      client.query('select currency from currency where id=$1', [recipient.id], (err, res) => {
+      dbClient.query('select currency from currency where id=$1', [recipient.id], (err, res) => {
         if (err) {
           console.log(new Date().toISOString() + ' -- [ERROR]', err);
           msg.channel.send('Something went wrong. Check the console.');
@@ -194,7 +197,7 @@ dcClient.on('message', msg => {
         const recipientOldBalance = parseInt(res.rows[0].currency);
 
         // Check to see if giver has enough money
-        client.query('select currency from currency where id=$1', [msg.author.id], (err, res) => {
+        dbClient.query('select currency from currency where id=$1', [msg.author.id], (err, res) => {
           if (err) {
             console.log(new Date().toISOString() + ' -- [ERROR]', err);
             msg.channel.send('Something went wrong. Check the console.');
@@ -217,14 +220,14 @@ dcClient.on('message', msg => {
           // Process the transaction
           const recipientNewBalance = recipientOldBalance + giveAmount;
           const giverNewBalance = giverOldBalance - giveAmount;
-          client.query('update currency set currency=$1 where id=$2;', [recipientNewBalance, recipient.id], (err, res) => {
+          dbClient.query('update currency set currency=$1 where id=$2;', [recipientNewBalance, recipient.id], (err, res) => {
             if (err) {
               console.log(new Date().toISOString() + ' -- [ERROR]', err);
               msg.channel.send('Something went wrong. Check the console.');
               return;
             }
           });
-          client.query('update currency set currency=$1 where id=$2;', [giverNewBalance, msg.author.id], (err, res) => {
+          dbClient.query('update currency set currency=$1 where id=$2;', [giverNewBalance, msg.author.id], (err, res) => {
             if (err) {
               console.log(new Date().toISOString() + ' -- [ERROR]', err);
               msg.channel.send('Something went wrong. Check the console.');
