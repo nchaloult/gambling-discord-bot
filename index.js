@@ -28,7 +28,7 @@ dcClient.on('message', msg => {
     if (msgContent === 'all') {
       // Fetch everyone's balances
       console.log(new Date().toISOString() + ' -- [INFO] Bot invoked with "all" message. Reading everyone\'s balance....');
-      client.query('select currency, username from currency;', (err, res) => {
+      client.query('select currency, username from currency order by currency desc;', (err, res) => {
         if (err) {
           console.log(new Date().toISOString() + ' -- [ERROR]', err);
           msg.channel.send('Something went wrong. Check the console.');
