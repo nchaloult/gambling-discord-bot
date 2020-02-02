@@ -2,7 +2,7 @@ const { botPrefix, balanceFloor } = require('./constants');
 
 // Fetch everyone's balances in descending order.
 exports.allCmd = (db, msg) => {
-  db.query('select currency, username from currency order by currency desc;', (err, res) => {
+  db.query('select balance, username from currency order by balance desc;', (err, res) => {
     if (err) {
       notifyOfErr(err, msg);
     }
@@ -10,7 +10,7 @@ exports.allCmd = (db, msg) => {
     // Display each person's balance next to their username
     let output = "balances:\n\n";
     res.rows.map(row => {
-      output += row.username + ': ' + botPrefix + row.currency + '\n';
+      output += row.username + ': ' + botPrefix + row.balance + '\n';
     });
     msg.channel.send(output);
   });
@@ -35,14 +35,14 @@ exports.alltimeCmd = (db, msg) => {
 // Print the current user's balance. If they don't have a balance, make them
 // an account.
 exports.bankCmd = (db, msg) => {
-  db.query('select currency from currency where id=$1;', [msg.author.id], (err, res) => {
+  db.query('select balance from currency where id=$1;', [msg.author.id], (err, res) => {
     if (err) {
       notifyOfErr(err, msg);
     }
 
     // If the current user has a bank account...
     if (res.rowCount > 0) {
-      msg.reply(`your balance is: ${botPrefix}${res.rows[0].currency}`);
+      msg.reply(`your balance is: ${botPrefix}${res.rows[0].balance}`);
     } else {
       // Make a new bank account for the current user
       msg.channel.send('Making an account for you...');
@@ -72,7 +72,7 @@ exports.gambleCmd = (db, msg, msgContent) => {
     }
 
     // Fetch current user's balance
-    db.query('select currency, alltime_balance from currency where id=$1', [msg.author.id], (err, res) => {
+    db.query('select balance, alltime_balance from currency where id=$1', [msg.author.id], (err, res) => {
       if (err) {
         notifyOfErr(err, msg);
       }
@@ -83,7 +83,7 @@ exports.gambleCmd = (db, msg, msgContent) => {
         return;
       }
 
-      const gamblerOldBalance = parseInt(res.rows[0].currency);
+      const gamblerOldBalance = parseInt(res.rows[0].balance);
       if (gamblerOldBalance < gambleAmount) {
         msg.channel.send('You can\'t gamble more money than you have.');
         return;
@@ -121,7 +121,7 @@ exports.gambleCmd = (db, msg, msgContent) => {
       }
 
       // Update current user's balance based on the outcome of their gamble
-      db.query('update currency set currency=$1 where id=$2', [gamblerNewBalance, msg.author.id], (err, res) => {
+      db.query('update currency set balance=$1 where id=$2', [gamblerNewBalance, msg.author.id], (err, res) => {
         if (err) {
           notifyOfErr(err, msg);
         }
@@ -163,7 +163,7 @@ exports.giveCmd = (db, msg, msgContent) => {
     return;
   }
 
-  db.query('select currency from currency where id=$1', [recipient.id], (err, res) => {
+  db.query('select balance from currency where id=$1', [recipient.id], (err, res) => {
     if (err) {
       notifyOfErr(err, msg);
     }
@@ -174,9 +174,9 @@ exports.giveCmd = (db, msg, msgContent) => {
       return;
     }
 
-    const recipientOldBalance = parseInt(res.rows[0].currency);
+    const recipientOldBalance = parseInt(res.rows[0].balance);
 
-    db.query('select currency from currency where id=$1', [msg.author.id], (err, res) => {
+    db.query('select balance from currency where id=$1', [msg.author.id], (err, res) => {
       if (err) {
         notifyOfErr(err, msg);
       }
@@ -189,7 +189,7 @@ exports.giveCmd = (db, msg, msgContent) => {
 
       // Make sure that the transaction won't let the giver go below the
       // balance floor
-      const giverOldBalance = parseInt(res.rows[0].currency);
+      const giverOldBalance = parseInt(res.rows[0].balance);
       if (giverOldBalance - giveAmount < balanceFloor) {
         msg.channel.send(`That'd leave you with \$${giverOldBalance - giveAmount}. You can't go below $${balanceFloor}`);
         return;
@@ -198,12 +198,12 @@ exports.giveCmd = (db, msg, msgContent) => {
       // Process the transaction
       const recipientNewBalance = recipientOldBalance + giveAmount;
       const giverNewBalance = giverOldBalance - giveAmount;
-      db.query('update currency set currency=$1 where id=$2;', [recipientNewBalance, recipient.id], (err, res) => {
+      db.query('update currency set balance=$1 where id=$2;', [recipientNewBalance, recipient.id], (err, res) => {
         if (err) {
           notifyOfErr(err, msg);
         }
       });
-      db.query('update currency set currency=$1 where id=$2;', [giverNewBalance, msg.author.id], (err, res) => {
+      db.query('update currency set balance=$1 where id=$2;', [giverNewBalance, msg.author.id], (err, res) => {
         if (err) {
           notifyOfErr(err, msg);
         }
