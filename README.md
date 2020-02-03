@@ -7,6 +7,9 @@ A Discord bot to gamble fictitious currency and compete with others for the high
 * Each new player begins with $100
 * Your balance can never dip below $10
 * Each time a player gambles, they are betting on the outcome of a coin flip (the probability of winning a gamble is 0.5)
+	* Unless they specify their own odds:
+	* Specify a number between 1 and 99, inclusive. A random number between 0 and 100, inclusive, is generated. If the random number is greater than or equal to the provided number, the player wins
+	* The riskier of a bet a player makes (the higher number they specify), the higher their earnings for that bet will be
 
 ## Commands
 
@@ -19,7 +22,8 @@ A Discord bot to gamble fictitious currency and compete with others for the high
 	* View each player's all-time-high balance
 * `$gamble`
 	* Gamble money
-	* Example usage: `$gamble 100`
+	* Example usage: `$gamble 100` (the odds are 50/50)
+	* Example usage: `$gamble 100 60` (if the random number is 60 or above, the player wins)
 * `$give`
 	* Give another player money
 	* Example usage: `$give @someone 100`
