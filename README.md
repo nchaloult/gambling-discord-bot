@@ -34,3 +34,9 @@ A Discord bot to gamble fictitious currency and compete with others for the high
 * Bet on the outcome of other players' gambles
 * Be able to steal from other players with a high risk
 	* (Maybe?)
+
+## Dev Operation Instructions
+
+To restart all apps on a project's Heroku dyno, run:
+
+$ heroku dyno:restart
