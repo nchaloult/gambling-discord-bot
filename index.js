@@ -17,6 +17,7 @@ dotenv.config();
 // Establish pool of Postgres clients. The default max number of clients is 10.
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  max: 20, // Sets max number of clients allowed in the connection pool
   ssl: {
     rejectUnauthorized: false,
   },
