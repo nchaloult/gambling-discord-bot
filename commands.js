@@ -116,8 +116,72 @@ exports.gambleCmd = (db, msg, msgContent) => {
         db.query('update currency set balance=$1 where id=$2', [gamblerNewBalance, msg.author.id]);
       })
       .catch((err) => notifyOfErr(err, msg));
+  } else if (msgArgs.length === 3) {
+    const gambleAmount = parseInt(msgArgs[1], 10);
+    const guessedNumber = parseInt(msgArgs[2], 10);
+    if (Number.isNaN(gambleAmount)) {
+      msg.channel.send(`Provide a dollar amount to gamble. Example usage: \`${botPrefix}gamble 100 50\``);
+      return;
+    }
+    if (gambleAmount <= 0) {
+      msg.channel.send('You have to gamble a positive amount of money.');
+      return;
+    }
+    if (Number.isNaN(guessedNumber) || guessedNumber < 1 || guessedNumber > 99) {
+      msg.channel.send(`Guess a number between 1 and 99, inclusive. Example usage: \`${botPrefix}gamble 100 50\``);
+      return;
+    }
+
+    // Fetch current user's balance
+    db.query('select balance, alltime_balance from currency where id=$1', [msg.author.id])
+      .then((res) => {
+        // If the current user doesn't have an account, ask them to make one
+        if (res.rowCount <= 0) {
+          msg.channel.send(`You need to make an account first. Type: \`${botPrefix}bank\``);
+          return;
+        }
+
+        const gamblerOldBalance = parseInt(res.rows[0].balance, 10);
+        if (gamblerOldBalance < gambleAmount) {
+          msg.channel.send('You can\'t gamble more money than you have.');
+          return;
+        }
+
+        // Process the gamble
+        const gambleResult = Math.floor(Math.random() * 101); // Returns int in range: [0, 100]
+        let gamblerNewBalance;
+        if (gambleResult > guessedNumber) {
+          // Current user won the gamble
+          gamblerNewBalance = gamblerOldBalance
+                              + Math.ceil(gambleAmount * (100 / ((100 - guessedNumber) * 2)));
+
+          // Check if the current user's new balance is greater than their all-time high
+          const alltimeBalance = parseInt(res.rows[0].alltime_balance, 10);
+          if (gamblerNewBalance > alltimeBalance) {
+            db.query('update currency set alltime_balance=$1 where id=$2;', [gamblerNewBalance, msg.author.id]);
+          }
+
+          msg.reply(`the number was ${gambleResult}. You won $${gamblerNewBalance - gamblerOldBalance}! Your new balance is $${gamblerNewBalance}`);
+        } else {
+          gamblerNewBalance = gamblerOldBalance - gambleAmount;
+
+          if (gamblerNewBalance > balanceFloor) {
+            // Current user lost the gamble
+            gamblerNewBalance = gamblerOldBalance - gambleAmount;
+            msg.reply(`the number was ${gambleResult}. You lost $${gambleAmount}. Your new balance is $${gamblerNewBalance}`);
+          } else {
+            // Current user bottomed out. Don't let them go below the balance
+            // floor
+            gamblerNewBalance = balanceFloor;
+            msg.reply(`the number was ${gambleResult}. You lost. We bailed you out. Your new balance is $${balanceFloor}`);
+          }
+        }
+
+        // Update current user's balance based on the outcome of their gamble
+        db.query('update currency set balance=$1 where id=$2', [gamblerNewBalance, msg.author.id]);
+      })
+      .catch((err) => notifyOfErr(err, msg));
   } else {
-    // Number of provided args was not equal to 2
     msg.channel.send(`Unexpected number of arguments. Example usage: \`${botPrefix}gamble 100\``);
   }
 };
