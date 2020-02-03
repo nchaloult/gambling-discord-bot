@@ -153,7 +153,7 @@ exports.giveCmd = (db, msg, msgContent) => {
     return;
   }
 
-  db.query('select balance from currency where id=$1', [recipient.id])
+  db.query('select balance, alltime_balance from currency where id=$1', [recipient.id])
     .then((recipientRes) => {
       // Check if the recipient has an account
       if (recipientRes.rowCount <= 0) {
@@ -184,6 +184,12 @@ exports.giveCmd = (db, msg, msgContent) => {
           db.query('update currency set balance=$1 where id=$2;', [recipientNewBalance, recipient.id]);
           db.query('update currency set balance=$1 where id=$2;', [giverNewBalance, msg.author.id]);
           msg.channel.send(`You gave ${recipient.username} $${giveAmount}. Their new balance is $${recipientNewBalance}; your new balance is $${giverNewBalance}`);
+
+          // Check if the recipient's new balance is greater than their all-time high
+          const recipientAlltimeBalance = parseInt(recipientRes.rows[0].alltime_balance, 10);
+          if (recipientNewBalance > recipientAlltimeBalance) {
+            db.query('update currency set alltime_balance=$1 where id=$2;', [recipientNewBalance, recipient.id]);
+          }
         });
     })
     .catch((err) => notifyOfErr(err, msg));
