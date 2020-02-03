@@ -1,28 +1,35 @@
-const { botPrefix, balanceFloor } = require('./constants');
-const { allCmd, alltimeCmd, bankCmd, gambleCmd, giveCmd } = require('./commands');
+const dotenv = require('dotenv');
+const discord = require('discord.js');
+const { Pool } = require('pg');
+
+const { botPrefix } = require('./constants');
+const {
+  allCmd,
+  alltimeCmd,
+  bankCmd,
+  gambleCmd,
+  giveCmd,
+} = require('./commands');
 
 // Load in secrets from env vars
-const dotenv = require('dotenv');
 dotenv.config();
 
 // Establish pool of Postgres clients. The default max number of clients is 10.
-const { Pool } = require('pg');
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false
-  }
+    rejectUnauthorized: false,
+  },
 });
 
 // Init discord client
-const discord = require('discord.js');
 const dcClient = new discord.Client();
 
 dcClient.on('ready', () => {
   console.log(`Logged in as ${dcClient.user.tag}`);
 });
 
-dcClient.on('message', msg => {
+dcClient.on('message', (msg) => {
   // If the message's first character is the bot's prefix...
   if (msg.content.substring(0, botPrefix.length) === botPrefix) {
     // Remove prefix and sanitize input
