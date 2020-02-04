@@ -88,17 +88,19 @@ exports.gambleCmd = (db, msg, msgContent) => {
         // Flip a coin and process the gamble
         const coinFlip = Math.floor(Math.random() * 2); // Either equals 0 or 1
         let gamblerNewBalance;
+        let updateAlltimeHigh;
         if (coinFlip === 1) {
           // Current user won the gamble
           gamblerNewBalance = gamblerOldBalance + gambleAmount;
 
           // Check if the current user's new balance is greater than their all-time high
           const alltimeBalance = parseInt(res.rows[0].alltime_balance, 10);
-          if (gamblerNewBalance > alltimeBalance) {
-            db.query('update currency set alltime_balance=$1 where id=$2;', [gamblerNewBalance, msg.author.id]);
+          updateAlltimeHigh = gamblerNewBalance > alltimeBalance;
+          if (updateAlltimeHigh) {
+            msg.reply(`you gambled $${gambleAmount} and won! Your new balance is $${gamblerNewBalance} — a new all-time high!`);
+          } else {
+            msg.reply(`you gambled $${gambleAmount} and won! Your new balance is $${gamblerNewBalance}`);
           }
-
-          msg.reply(`you gambled $${gambleAmount} and won! Your new balance is $${gamblerNewBalance}`);
         } else {
           // Current user lost the gamble
           gamblerNewBalance = gamblerOldBalance - gambleAmount;
@@ -113,7 +115,11 @@ exports.gambleCmd = (db, msg, msgContent) => {
         }
 
         // Update current user's balance based on the outcome of their gamble
-        db.query('update currency set balance=$1 where id=$2', [gamblerNewBalance, msg.author.id]);
+        if (updateAlltimeHigh) {
+          db.query('update currency set balance=$1, alltime_balance=$1 where id=$2', [gamblerNewBalance, msg.author.id]);
+        } else {
+          db.query('update currency set balance=$1 where id=$2', [gamblerNewBalance, msg.author.id]);
+        }
       })
       .catch((err) => notifyOfErr(err, msg));
   } else if (msgArgs.length === 3) {
@@ -150,6 +156,7 @@ exports.gambleCmd = (db, msg, msgContent) => {
         // Process the gamble
         const gambleResult = Math.floor(Math.random() * 101); // Returns int in range: [0, 100]
         let gamblerNewBalance;
+        let updateAlltimeHigh;
         if (gambleResult > guessedNumber) {
           // Current user won the gamble
           gamblerNewBalance = gamblerOldBalance
@@ -158,11 +165,12 @@ exports.gambleCmd = (db, msg, msgContent) => {
 
           // Check if the current user's new balance is greater than their all-time high
           const alltimeBalance = parseInt(res.rows[0].alltime_balance, 10);
-          if (gamblerNewBalance > alltimeBalance) {
-            db.query('update currency set alltime_balance=$1 where id=$2;', [gamblerNewBalance, msg.author.id]);
+          updateAlltimeHigh = gamblerNewBalance > alltimeBalance;
+          if (updateAlltimeHigh) {
+            msg.reply(`the number was ${gambleResult}. You won $${gamblerNewBalance - gamblerOldBalance}! Your new balance is $${gamblerNewBalance} — a new all-time high!`);
+          } else {
+            msg.reply(`the number was ${gambleResult}. You won $${gamblerNewBalance - gamblerOldBalance}! Your new balance is $${gamblerNewBalance}`);
           }
-
-          msg.reply(`the number was ${gambleResult}. You won $${gamblerNewBalance - gamblerOldBalance}! Your new balance is $${gamblerNewBalance}`);
         } else {
           gamblerNewBalance = gamblerOldBalance - gambleAmount;
 
@@ -179,7 +187,11 @@ exports.gambleCmd = (db, msg, msgContent) => {
         }
 
         // Update current user's balance based on the outcome of their gamble
-        db.query('update currency set balance=$1 where id=$2', [gamblerNewBalance, msg.author.id]);
+        if (updateAlltimeHigh) {
+          db.query('update currency set balance=$1, alltime_balance=$1 where id=$2', [gamblerNewBalance, msg.author.id]);
+        } else {
+          db.query('update currency set balance=$1 where id=$2', [gamblerNewBalance, msg.author.id]);
+        }
       })
       .catch((err) => notifyOfErr(err, msg));
   } else {
