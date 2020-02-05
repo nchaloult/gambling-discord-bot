@@ -256,16 +256,17 @@ exports.giveCmd = (db, msg, msgContent) => {
           }
 
           // Process the transaction
-          const recipientNewBalance = recipientOldBalance + giveAmount;
           const giverNewBalance = giverOldBalance - giveAmount;
-          db.query('update currency set balance=$1 where id=$2;', [recipientNewBalance, recipient.id]);
           db.query('update currency set balance=$1 where id=$2;', [giverNewBalance, msg.author.id]);
-          msg.channel.send(`You gave ${recipient.username} $${giveAmount}. Their new balance is $${recipientNewBalance}; your new balance is $${giverNewBalance}`);
 
-          // Check if the recipient's new balance is greater than their all-time high
+          const recipientNewBalance = recipientOldBalance + giveAmount;
           const recipientAlltimeBalance = parseInt(recipientRes.rows[0].alltime_balance, 10);
           if (recipientNewBalance > recipientAlltimeBalance) {
-            db.query('update currency set alltime_balance=$1 where id=$2;', [recipientNewBalance, recipient.id]);
+            db.query('update currency set balance=$1, alltime_balance=$1 where id=$2;', [recipientNewBalance, recipient.id]);
+            msg.channel.send(`You gave ${recipient.username} $${giveAmount}. Their new balance is $${recipientNewBalance} — a new all-time high! Your new balance is $${giverNewBalance}`);
+          } else {
+            db.query('update currency set balance=$1 where id=$2;', [recipientNewBalance, recipient.id]);
+            msg.channel.send(`You gave ${recipient.username} $${giveAmount}. Their new balance is $${recipientNewBalance}; your new balance is $${giverNewBalance}`);
           }
         });
     })
