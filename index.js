@@ -33,7 +33,7 @@ dcClient.on('ready', () => {
 
 dcClient.on('message', (msg) => {
   // If the message's first character is the bot's prefix...
-  if (msg.content.substring(0, botPrefix.length) === botPrefix) {
+  if (msg.content.startsWith(botPrefix)) {
     // Remove prefix and sanitize input
     const msgContent = msg.content.substring(botPrefix.length).trim().toLowerCase();
 
@@ -43,7 +43,7 @@ dcClient.on('message', (msg) => {
       alltimeCmd(pool, msg);
     } else if (msgContent === 'bank') {
       bankCmd(pool, msg);
-    } else if (msgContent.includes('gamble')) {
+    } else if (msgContent.startsWith('gamble')) {
       const msgArgs = msgContent.split(' ');
       if (msgArgs.length === 2) {
         const gambleAmount = parseInt(msgArgs[1], 10);
@@ -77,7 +77,7 @@ dcClient.on('message', (msg) => {
       } else {
         msg.channel.send(`Unexpected number of arguments. Example usage: \`${botPrefix}gamble 100\``);
       }
-    } else if (msgContent.includes('give')) {
+    } else if (msgContent.startsWith('give')) {
       const msgArgs = msgContent.split(' ');
       if (msgArgs.length !== 3) {
         msg.channel.send(`Unexpected number of arguments. Example usage: \`${botPrefix}give @someone 100\``);
