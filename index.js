@@ -46,9 +46,15 @@ dcClient.on('message', (msg) => {
     } else if (msgContent.startsWith('gamble')) {
       const msgArgs = msgContent.split(' ');
       if (msgArgs.length === 2) {
-        const gambleAmount = parseInt(msgArgs[1], 10);
+        let gambleAmount = msgArgs[1];
+        // Parse input like: '100k' as: '100000'
+        if (gambleAmount.endsWith('k')) {
+          gambleAmount = gambleAmount.replace('k', '000');
+        }
+
+        gambleAmount = parseInt(gambleAmount, 10);
         if (Number.isNaN(gambleAmount)) {
-          msg.channel.send(`Provide a dollar amount to gamble. Example usage: \`${botPrefix}gamble 100\``);
+          msg.channel.send(`Provide a dollar amount to gamble. Example usage: \`${botPrefix}gamble 100\` or \`${botPrefix}gamble 10k\``);
           return;
         }
         if (gambleAmount <= 0) {
@@ -58,10 +64,16 @@ dcClient.on('message', (msg) => {
 
         gambleCmd(pool, msg, gambleAmount);
       } else if (msgArgs.length === 3) {
-        const gambleAmount = parseInt(msgArgs[1], 10);
+        let gambleAmount = msgArgs[1];
+        // Parse input like: '100k' as: '100000'
+        if (gambleAmount.endsWith('k')) {
+          gambleAmount = gambleAmount.replace('k', '000');
+        }
+
+        gambleAmount = parseInt(gambleAmount, 10);
         const guessedNumber = parseInt(msgArgs[2], 10);
         if (Number.isNaN(gambleAmount)) {
-          msg.channel.send(`Provide a dollar amount to gamble. Example usage: \`${botPrefix}gamble 100 50\``);
+          msg.channel.send(`Provide a dollar amount to gamble. Example usage: \`${botPrefix}gamble 100 50\` or \`${botPrefix}gamble 10k 50\``);
           return;
         }
         if (gambleAmount <= 0) {
@@ -69,24 +81,30 @@ dcClient.on('message', (msg) => {
           return;
         }
         if (Number.isNaN(guessedNumber) || guessedNumber < 1 || guessedNumber > 99) {
-          msg.channel.send(`Guess a number between 1 and 99, inclusive. Example usage: \`${botPrefix}gamble 100 50\``);
+          msg.channel.send(`Guess a number between 1 and 99, inclusive. Example usage: \`${botPrefix}gamble 100 50\` or \`${botPrefix}gamble 10k 50\``);
           return;
         }
 
         gambleWithCustomRiskCmd(pool, msg, gambleAmount, guessedNumber);
       } else {
-        msg.channel.send(`Unexpected number of arguments. Example usage: \`${botPrefix}gamble 100\``);
+        msg.channel.send(`Unexpected number of arguments. Example usage: \`${botPrefix}gamble 100\` or \`${botPrefix}gamble 10k\``);
       }
     } else if (msgContent.startsWith('give')) {
       const msgArgs = msgContent.split(' ');
       if (msgArgs.length !== 3) {
-        msg.channel.send(`Unexpected number of arguments. Example usage: \`${botPrefix}give @someone 100\``);
+        msg.channel.send(`Unexpected number of arguments. Example usage: \`${botPrefix}give @someone 100\` or \`${botPrefix}give @someone 10k\``);
         return;
       }
 
-      const giveAmount = parseInt(msgArgs[2], 10);
+      let giveAmount = msgArgs[2];
+      // Parse input like: '100k' as: '100000'
+      if (giveAmount.endsWith('k')) {
+        giveAmount = giveAmount.replace('k', '000');
+      }
+
+      giveAmount = parseInt(giveAmount, 10);
       if (Number.isNaN(giveAmount)) {
-        msg.channel.send(`Provide an amount to give. Example usage: \`${botPrefix}give @someone 100\``);
+        msg.channel.send(`Provide an amount to give. Example usage: \`${botPrefix}give @someone 100\` or \`${botPrefix}give @someone 10k\``);
         return;
       }
       if (giveAmount <= 0) {
@@ -97,7 +115,7 @@ dcClient.on('message', (msg) => {
       // Check that someone was @'d
       const recipients = msg.mentions.users;
       if (recipients.size !== 1) {
-        msg.channel.send(`@ one person to give money to. Example usage: \`${botPrefix}give @someone 100\``);
+        msg.channel.send(`@ one person to give money to. Example usage: \`${botPrefix}give @someone 100\` or \`${botPrefix}give @someone 10k\``);
         return;
       }
 

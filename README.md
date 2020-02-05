@@ -23,10 +23,13 @@ A Discord bot to gamble fictitious currency and compete with others for the high
 * `$gamble`
 	* Gamble money
 	* Example usage: `$gamble 100` (the odds are 50/50)
+	* Example usage: `$gamble 10k` (the odds are 50/50)
 	* Example usage: `$gamble 100 60` (if the random number is 60 or above, the player wins)
+	* Example usage: `$gamble 10k 60` (if the random number is 60 or above, the player wins)
 * `$give`
 	* Give another player money
 	* Example usage: `$give @someone 100`
+	* Example usage: `$give @someone 10k`
 
 ## New Features
 
