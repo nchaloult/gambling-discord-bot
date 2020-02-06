@@ -7,6 +7,10 @@ const notifyOfErr = (err, msg) => {
   msg.channel.send('Something went wrong with a database query. Check the console.');
 };
 
+// Utility func that formats large numbers by including commas.
+// https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
+const formatNum = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
 // Fetch everyone's balances in descending order.
 exports.allCmd = (db, msg) => {
   db.query('select balance, username from currency order by balance desc;')
@@ -14,7 +18,7 @@ exports.allCmd = (db, msg) => {
       // Display each person's balance next to their username
       let output = 'Balances:\n\n';
       res.rows.forEach((row) => {
-        output += `${row.username}: ${botPrefix}${row.balance}\n`;
+        output += `${row.username}: ${botPrefix}${formatNum(row.balance)}\n`;
       });
       msg.channel.send(output);
     })
@@ -28,7 +32,7 @@ exports.alltimeCmd = (db, msg) => {
       // Display each person's all-time balance next to their username
       let output = 'All-time balances:\n\n';
       res.rows.forEach((row) => {
-        output += `${row.username}: ${botPrefix}${row.alltime_balance}\n`;
+        output += `${row.username}: ${botPrefix}${formatNum(row.alltime_balance)}\n`;
       });
       msg.channel.send(output);
     })
@@ -42,7 +46,7 @@ exports.bankCmd = (db, msg) => {
     .then((res) => {
       // If the result set contains a row (if the current user has an account)
       if (res.rowCount > 0) {
-        msg.reply(`your balance is: ${botPrefix}${res.rows[0].balance}`);
+        msg.reply(`your balance is: ${botPrefix}${formatNum(res.rows[0].balance)}`);
       } else {
         // Make a new bank account for the current user
         msg.channel.send('Making an account for you...');
@@ -84,20 +88,20 @@ exports.gambleCmd = (db, msg, gambleAmount) => {
         const alltimeBalance = parseInt(res.rows[0].alltime_balance, 10);
         updateAlltimeHigh = gamblerNewBalance > alltimeBalance;
         if (updateAlltimeHigh) {
-          msg.reply(`you gambled $${gambleAmount} and won! Your new balance is $${gamblerNewBalance} — a new all-time high!`);
+          msg.reply(`you gambled $${formatNum(gambleAmount)} and won! Your new balance is $${formatNum(gamblerNewBalance)} — a new all-time high!`);
         } else {
-          msg.reply(`you gambled $${gambleAmount} and won! Your new balance is $${gamblerNewBalance}`);
+          msg.reply(`you gambled $${formatNum(gambleAmount)} and won! Your new balance is $${formatNum(gamblerNewBalance)}`);
         }
       } else {
         // Current user lost the gamble
         gamblerNewBalance = gamblerOldBalance - gambleAmount;
         if (gamblerNewBalance > balanceFloor) {
-          msg.reply(`you gambled $${gambleAmount} and lost. Your new balance is $${gamblerNewBalance}`);
+          msg.reply(`you gambled $${formatNum(gambleAmount)} and lost. Your new balance is $${formatNum(gamblerNewBalance)}`);
         } else {
           // Current user bottomed out. Don't let them go below the balance
           // floor
           gamblerNewBalance = balanceFloor;
-          msg.reply(`you gambled $${gambleAmount} and lost. We bailed you out. Your new balance is $${gamblerNewBalance}`);
+          msg.reply(`you gambled $${formatNum(gambleAmount)} and lost. We bailed you out. Your new balance is $${formatNum(gamblerNewBalance)}`);
         }
       }
 
@@ -143,9 +147,9 @@ exports.gambleWithCustomRiskCmd = (db, msg, gambleAmount, guessedNumber) => {
         const alltimeBalance = parseInt(res.rows[0].alltime_balance, 10);
         updateAlltimeHigh = gamblerNewBalance > alltimeBalance;
         if (updateAlltimeHigh) {
-          msg.reply(`the number was ${gambleResult}. You won $${gamblerNewBalance - gamblerOldBalance}! Your new balance is $${gamblerNewBalance} — a new all-time high!`);
+          msg.reply(`the number was ${gambleResult}. You won $${formatNum(gamblerNewBalance - gamblerOldBalance)}! Your new balance is $${formatNum(gamblerNewBalance)} — a new all-time high!`);
         } else {
-          msg.reply(`the number was ${gambleResult}. You won $${gamblerNewBalance - gamblerOldBalance}! Your new balance is $${gamblerNewBalance}`);
+          msg.reply(`the number was ${gambleResult}. You won $${formatNum(gamblerNewBalance - gamblerOldBalance)}! Your new balance is $${formatNum(gamblerNewBalance)}`);
         }
       } else {
         gamblerNewBalance = gamblerOldBalance - gambleAmount;
@@ -153,7 +157,7 @@ exports.gambleWithCustomRiskCmd = (db, msg, gambleAmount, guessedNumber) => {
         if (gamblerNewBalance > balanceFloor) {
           // Current user lost the gamble
           gamblerNewBalance = gamblerOldBalance - gambleAmount;
-          msg.reply(`the number was ${gambleResult}. You lost $${gambleAmount}. Your new balance is $${gamblerNewBalance}`);
+          msg.reply(`the number was ${gambleResult}. You lost $${formatNum(gambleAmount)}. Your new balance is $${formatNum(gamblerNewBalance)}`);
         } else {
           // Current user bottomed out. Don't let them go below the balance
           // floor
@@ -194,7 +198,7 @@ exports.giveCmd = (db, msg, giveAmount, recipient) => {
           const giverOldBalance = parseInt(giverRes.rows[0].balance, 10);
           const recipientOldBalance = parseInt(recipientRes.rows[0].balance, 10);
           if (giverOldBalance - giveAmount < balanceFloor) {
-            msg.channel.send(`That'd leave you with $${giverOldBalance - giveAmount}. You can't go below $${balanceFloor}`);
+            msg.channel.send(`That'd leave you with $${formatNum(giverOldBalance - giveAmount)}. You can't go below $${balanceFloor}`);
             return;
           }
 
@@ -206,10 +210,10 @@ exports.giveCmd = (db, msg, giveAmount, recipient) => {
           const recipientAlltimeBalance = parseInt(recipientRes.rows[0].alltime_balance, 10);
           if (recipientNewBalance > recipientAlltimeBalance) {
             db.query('update currency set balance=$1, alltime_balance=$1 where id=$2;', [recipientNewBalance, recipient.id]);
-            msg.channel.send(`You gave ${recipient.username} $${giveAmount}. Their new balance is $${recipientNewBalance} — a new all-time high! Your new balance is $${giverNewBalance}`);
+            msg.channel.send(`You gave ${recipient.username} $${formatNum(giveAmount)}. Their new balance is $${formatNum(recipientNewBalance)} — a new all-time high! Your new balance is $${formatNum(giverNewBalance)}`);
           } else {
             db.query('update currency set balance=$1 where id=$2;', [recipientNewBalance, recipient.id]);
-            msg.channel.send(`You gave ${recipient.username} $${giveAmount}. Their new balance is $${recipientNewBalance}; your new balance is $${giverNewBalance}`);
+            msg.channel.send(`You gave ${recipient.username} $${formatNum(giveAmount)}. Their new balance is $${formatNum(recipientNewBalance)}; your new balance is $${formatNum(giverNewBalance)}`);
           }
         });
     })
