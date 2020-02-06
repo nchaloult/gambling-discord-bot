@@ -1,3 +1,4 @@
+const rand = require('random-number-csprng');
 const { botPrefix, balanceFloor } = require('./constants');
 
 // Utility func that prints an error to the console if something goes wrong
@@ -77,40 +78,43 @@ exports.gambleCmd = (db, msg, gambleAmount) => {
       }
 
       // Flip a coin and process the gamble
-      const coinFlip = Math.floor(Math.random() * 2); // Either equals 0 or 1
-      let gamblerNewBalance;
-      let updateAlltimeHigh;
-      if (coinFlip === 1) {
-        // Current user won the gamble
-        gamblerNewBalance = gamblerOldBalance + gambleAmount;
+      rand(0, 1)
+        .then((coinFlip) => {
+          let gamblerNewBalance;
+          let updateAlltimeHigh;
+          if (coinFlip === 1) {
+            // Current user won the gamble
+            gamblerNewBalance = gamblerOldBalance + gambleAmount;
 
-        // Check if the current user's new balance is greater than their all-time high
-        const alltimeBalance = parseInt(res.rows[0].alltime_balance, 10);
-        updateAlltimeHigh = gamblerNewBalance > alltimeBalance;
-        if (updateAlltimeHigh) {
-          msg.reply(`you gambled $${formatNum(gambleAmount)} and won! Your new balance is $${formatNum(gamblerNewBalance)} — a new all-time high!`);
-        } else {
-          msg.reply(`you gambled $${formatNum(gambleAmount)} and won! Your new balance is $${formatNum(gamblerNewBalance)}`);
-        }
-      } else {
-        // Current user lost the gamble
-        gamblerNewBalance = gamblerOldBalance - gambleAmount;
-        if (gamblerNewBalance > balanceFloor) {
-          msg.reply(`you gambled $${formatNum(gambleAmount)} and lost. Your new balance is $${formatNum(gamblerNewBalance)}`);
-        } else {
-          // Current user bottomed out. Don't let them go below the balance
-          // floor
-          gamblerNewBalance = balanceFloor;
-          msg.reply(`you gambled $${formatNum(gambleAmount)} and lost. We bailed you out. Your new balance is $${formatNum(gamblerNewBalance)}`);
-        }
-      }
+            // Check if the current user's new balance is greater than their all-time high
+            const alltimeBalance = parseInt(res.rows[0].alltime_balance, 10);
+            updateAlltimeHigh = gamblerNewBalance > alltimeBalance;
+            if (updateAlltimeHigh) {
+              msg.reply(`you gambled $${formatNum(gambleAmount)} and won! Your new balance is $${formatNum(gamblerNewBalance)} — a new all-time high!`);
+            } else {
+              msg.reply(`you gambled $${formatNum(gambleAmount)} and won! Your new balance is $${formatNum(gamblerNewBalance)}`);
+            }
+          } else {
+            // Current user lost the gamble
+            gamblerNewBalance = gamblerOldBalance - gambleAmount;
+            if (gamblerNewBalance > balanceFloor) {
+              msg.reply(`you gambled $${formatNum(gambleAmount)} and lost. Your new balance is $${formatNum(gamblerNewBalance)}`);
+            } else {
+              // Current user bottomed out. Don't let them go below the balance
+              // floor
+              gamblerNewBalance = balanceFloor;
+              msg.reply(`you gambled $${formatNum(gambleAmount)} and lost. We bailed you out. Your new balance is $${formatNum(gamblerNewBalance)}`);
+            }
+          }
 
-      // Update current user's balance based on the outcome of their gamble
-      if (updateAlltimeHigh) {
-        db.query('update currency set balance=$1, alltime_balance=$1 where id=$2', [gamblerNewBalance, msg.author.id]);
-      } else {
-        db.query('update currency set balance=$1 where id=$2', [gamblerNewBalance, msg.author.id]);
-      }
+          // Update current user's balance based on the outcome of their gamble
+          if (updateAlltimeHigh) {
+            db.query('update currency set balance=$1, alltime_balance=$1 where id=$2', [gamblerNewBalance, msg.author.id]);
+          } else {
+            db.query('update currency set balance=$1 where id=$2', [gamblerNewBalance, msg.author.id]);
+          }
+        })
+        .catch((err) => notifyOfErr(err, msg));
     })
     .catch((err) => notifyOfErr(err, msg));
 };
@@ -134,44 +138,47 @@ exports.gambleWithCustomRiskCmd = (db, msg, gambleAmount, guessedNumber) => {
       }
 
       // Process the gamble
-      const gambleResult = Math.floor(Math.random() * 101); // Returns int in range: [0, 100]
-      let gamblerNewBalance;
-      let updateAlltimeHigh;
-      if (gambleResult > guessedNumber) {
-        // Current user won the gamble
-        gamblerNewBalance = gamblerOldBalance
-                            + Math.floor(gambleAmount * (100 / (100 - guessedNumber)))
-                            - gambleAmount;
+      rand(0, 100)
+        .then((gambleResult) => {
+          let gamblerNewBalance;
+          let updateAlltimeHigh;
+          if (gambleResult > guessedNumber) {
+            // Current user won the gamble
+            gamblerNewBalance = gamblerOldBalance
+                                + Math.floor(gambleAmount * (100 / (100 - guessedNumber)))
+                                - gambleAmount;
 
-        // Check if the current user's new balance is greater than their all-time high
-        const alltimeBalance = parseInt(res.rows[0].alltime_balance, 10);
-        updateAlltimeHigh = gamblerNewBalance > alltimeBalance;
-        if (updateAlltimeHigh) {
-          msg.reply(`the number was ${gambleResult}. You won $${formatNum(gamblerNewBalance - gamblerOldBalance)}! Your new balance is $${formatNum(gamblerNewBalance)} — a new all-time high!`);
-        } else {
-          msg.reply(`the number was ${gambleResult}. You won $${formatNum(gamblerNewBalance - gamblerOldBalance)}! Your new balance is $${formatNum(gamblerNewBalance)}`);
-        }
-      } else {
-        gamblerNewBalance = gamblerOldBalance - gambleAmount;
+            // Check if the current user's new balance is greater than their all-time high
+            const alltimeBalance = parseInt(res.rows[0].alltime_balance, 10);
+            updateAlltimeHigh = gamblerNewBalance > alltimeBalance;
+            if (updateAlltimeHigh) {
+              msg.reply(`the number was ${gambleResult}. You won $${formatNum(gamblerNewBalance - gamblerOldBalance)}! Your new balance is $${formatNum(gamblerNewBalance)} — a new all-time high!`);
+            } else {
+              msg.reply(`the number was ${gambleResult}. You won $${formatNum(gamblerNewBalance - gamblerOldBalance)}! Your new balance is $${formatNum(gamblerNewBalance)}`);
+            }
+          } else {
+            gamblerNewBalance = gamblerOldBalance - gambleAmount;
 
-        if (gamblerNewBalance > balanceFloor) {
-          // Current user lost the gamble
-          gamblerNewBalance = gamblerOldBalance - gambleAmount;
-          msg.reply(`the number was ${gambleResult}. You lost $${formatNum(gambleAmount)}. Your new balance is $${formatNum(gamblerNewBalance)}`);
-        } else {
-          // Current user bottomed out. Don't let them go below the balance
-          // floor
-          gamblerNewBalance = balanceFloor;
-          msg.reply(`the number was ${gambleResult}. You lost. We bailed you out. Your new balance is $${balanceFloor}`);
-        }
-      }
+            if (gamblerNewBalance > balanceFloor) {
+              // Current user lost the gamble
+              gamblerNewBalance = gamblerOldBalance - gambleAmount;
+              msg.reply(`the number was ${gambleResult}. You lost $${formatNum(gambleAmount)}. Your new balance is $${formatNum(gamblerNewBalance)}`);
+            } else {
+              // Current user bottomed out. Don't let them go below the balance
+              // floor
+              gamblerNewBalance = balanceFloor;
+              msg.reply(`the number was ${gambleResult}. You lost. We bailed you out. Your new balance is $${balanceFloor}`);
+            }
+          }
 
-      // Update current user's balance based on the outcome of their gamble
-      if (updateAlltimeHigh) {
-        db.query('update currency set balance=$1, alltime_balance=$1 where id=$2', [gamblerNewBalance, msg.author.id]);
-      } else {
-        db.query('update currency set balance=$1 where id=$2', [gamblerNewBalance, msg.author.id]);
-      }
+          // Update current user's balance based on the outcome of their gamble
+          if (updateAlltimeHigh) {
+            db.query('update currency set balance=$1, alltime_balance=$1 where id=$2', [gamblerNewBalance, msg.author.id]);
+          } else {
+            db.query('update currency set balance=$1 where id=$2', [gamblerNewBalance, msg.author.id]);
+          }
+        })
+        .catch((err) => notifyOfErr(err, msg));
     })
     .catch((err) => notifyOfErr(err, msg));
 };
